@@ -49,13 +49,15 @@ class AstroGymEnv(gym.Env):
         assert action in self.action_space
         self._action = action
         # TODO: This implementation could be tidier; use NumPy?
-        x = (self._state[0] + self._state[1]) / 2
-        y = (self._state[2] + self._state[3]) / 2
-        w = self._state[1] - self._state[0]
-        assert w == self._state[3] - self._state[2]
+        # Only 3DoF here; self._state should be (x, y, w).
+        xl_old, xu_old, yl_old, yu_old = self._state
+        x = (xl_old + xu_old) / 2
+        y = (yl_old + yu_old) / 2
+        w = xu_old - xl_old
+        assert w == yu_old - yl_old
         x += self._action[0] * w / 2
         y += self._action[1] * w / 2
-        w = round(max(min(w + self._action[2] * w / 2, self.img_size), self.render_size))
+        w = round(max(min(w + self._action[2] * w / 2, self.img_size), self.min_window_size))
         xl, xu = x - w / 2, x + w / 2
         if xl < 0: 
             xl, xu = 0, w
@@ -69,7 +71,9 @@ class AstroGymEnv(gym.Env):
         xl, xu, yl, yu = int(round(xl)), int(round(xu)), int(round(yl)), int(round(yu))
         assert xu - xl == yu - yl == int(w)
         self._state = (xl, xu, yl, yu)
-        self._obs = self.obs()
+        if xl != xl_old or xu != xu_old or yl != yl_old or yu != yu_old:
+            self._obs = self.obs() # To save computation, only redo observation if it has changed.
+        print(self._state)
         return self._obs, self.reward(), self.done(), {}
 
     def obs(self): 
