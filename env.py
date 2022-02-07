@@ -79,7 +79,6 @@ class AstroGymEnv(gym.Env):
         self._state = (xl, xu, yl, yu)
         if xl != xl_old or xu != xu_old or yl != yl_old or yu != yu_old:
             self._obs = self.obs() # To save computation, only redo observation if it has changed.
-        print(self._state)
         return self._obs, self.reward(), self.done(), {}
 
     def obs(self): 
