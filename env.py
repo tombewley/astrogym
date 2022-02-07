@@ -13,7 +13,7 @@ class AstroGymEnv(gym.Env):
     OpenAI Gym-compatible environment for exploring astronomical images.
     """
 
-    render_size = 500 # In pixels
+    render_size = 100 # In pixels
     min_window_size = 100 # In pixels; CV2 will interpolate if this is < render_size
     plt_window_size = (6, 6) # In inches
     percentile_clip = 99 # Brightness percentile to clip each channel at
@@ -29,6 +29,8 @@ class AstroGymEnv(gym.Env):
         assert self.img_size >= 4 * self.render_size, "Insufficient image size" # NOTE: This is completely arbitrary
         self.img = np.clip(self.img, a_min=None, a_max=np.percentile(self.img, self.percentile_clip))
         self.img /= self.img.max()
+        self._state = (0, self.img_size, 0, self.img_size)
+        self.brightness_baseline = self.obs().sum()
         self.do_render = do_render
         if self.do_render: 
             self.fig, self.ax = plt.subplots(figsize=self.plt_window_size)
@@ -84,8 +86,11 @@ class AstroGymEnv(gym.Env):
         xl, xu, yl, yu = self._state
         return cv2.resize(self.img[yl:yu, xl:xu], (self.render_size, self.render_size))
 
-    def reward(self):       
-        return 0.
+    def reward(self):  
+        """
+        Experimental reward function for debugging: change in mean brightness vs full image.
+        """   
+        return (self._obs.sum() - self.brightness_baseline) / (self.render_size**2)
 
     def done(self):         
         return False
