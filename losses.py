@@ -1,6 +1,7 @@
 """
 Loss functions for astrogym
 """
+import torch
 
 def hoyer(x):
     """
