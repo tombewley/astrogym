@@ -124,24 +124,24 @@ class ResNet(nn.Module):
         return out
 
 
-def ResNet18(num_classes=128):
-    return ResNet(BasicBlock, [2,2,2,2], in_channels=5, num_classes=num_classes)
+def ResNet18(in_channels, num_classes=128):
+    return ResNet(BasicBlock, [2,2,2,2], in_channels, num_classes=num_classes)
 
-def ResNet34(num_classes=128):
-    return ResNet(BasicBlock, [3,4,6,3], in_channels=5, num_classes=num_classes)
+def ResNet34(in_channels, num_classes=128):
+    return ResNet(BasicBlock, [3,4,6,3], in_channels, num_classes=num_classes)
 
-def ResNet50():
-    return ResNet(Bottleneck, [3,4,6,3], in_channels=5)
+def ResNet50(in_channels):
+    return ResNet(Bottleneck, [3,4,6,3], in_channels)
 
-def ResNet101():
-    return ResNet(Bottleneck, [3,4,23,3], in_channels=5)
+def ResNet101(in_channels):
+    return ResNet(Bottleneck, [3,4,23,3], in_channels)
 
-def ResNet152():
-    return ResNet(Bottleneck, [3,8,36,3], in_channels=5)
+def ResNet152(in_channels):
+    return ResNet(Bottleneck, [3,8,36,3], in_channels)
 
 
 def test():
-    net = ResNet18()
+    net = ResNet18(in_channels=5)
     y = net(torch.randn(1,3,32,32))
     print(y.size())
 

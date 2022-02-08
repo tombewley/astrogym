@@ -45,6 +45,9 @@ class AstroGymEnv(gym.Env):
                 )
             for element in self._action_indicator: self.ax.add_artist(element)
 
+    @property 
+    def num_channels(self): return self.img.shape[2]
+    
     def reset(self):
         self._state = (0, self.img_size, 0, self.img_size)
         self._action = None
