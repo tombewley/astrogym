@@ -1,4 +1,3 @@
-import gym
 from env import AstroGymEnv
 import torch
 from resnet import ResNet18
@@ -8,12 +7,11 @@ env = AstroGymEnv(
     do_render=True
     )
 
-net = ResNet18()
+net = ResNet18(in_channels=env.num_channels)
 
 def pred_resnet(obs): 
-    # NOTE: It seems that the resnet can only accept a single channel?
     with torch.no_grad():
-        return net(torch.tensor(obs[:,:,0:1]).unsqueeze(0).permute(0,3,1,2))
+        return net(torch.tensor(obs).unsqueeze(0).permute(0,3,1,2))
 
 for ep in range(10):
     obs = env.reset()
