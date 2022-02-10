@@ -18,6 +18,7 @@ class AstroGymEnv(gym.Env):
     min_window_size = 100    # In pixels; CV2 will interpolate if this is < render_size
     plt_window_size = (6, 6) # In inches
     percentile_clip = 99     # Brightness percentile to clip each channel at
+    random_init = True       # Whether to randomly initialise the window in each episode
 
     def __init__(self, img, do_render=False):
         self.observation_space = None
@@ -50,7 +51,12 @@ class AstroGymEnv(gym.Env):
     def num_channels(self): return self.img.shape[2]
     
     def reset(self):
-        self._state = (0, self.img_size, 0, self.img_size)
+        if self.random_init:
+            w = np.random.randint(self.min_window_size, self.img_size+1)
+            xl, yl = np.random.randint(0, self.img_size+1-w, size=2)
+            self._state = (xl, xl+w, yl, yl+w)
+        else:
+            self._state = (0, self.img_size, 0, self.img_size)
         self._action = None
         self._obs = self.obs()
         return self._obs 
@@ -59,12 +65,11 @@ class AstroGymEnv(gym.Env):
         assert action in self.action_space
         self._action = action
         # TODO: This implementation could be tidier; use NumPy?
-        # Only 3DoF here; self._state should be (x, y, w).
+        # Only 3DoF so self._state *could* be (x, y, w), but this would make pixel rounding more fiddly
         xl_old, xu_old, yl_old, yu_old = self._state
         x = (xl_old + xu_old) / 2
         y = (yl_old + yu_old) / 2
         w = xu_old - xl_old
-        assert w == yu_old - yl_old
         x += self._action[0] * w / 2
         y += self._action[1] * w / 2
         w = round(max(min(w + self._action[2] * w / 2, self.img_size), self.min_window_size))
@@ -82,7 +87,7 @@ class AstroGymEnv(gym.Env):
         assert xu - xl == yu - yl == int(w)
         self._state = (xl, xu, yl, yu)
         if xl != xl_old or xu != xu_old or yl != yl_old or yu != yu_old:
-            self._obs = self.obs() # To save computation, only redo observation if it has changed.
+            self._obs = self.obs() # To save computation, only redo observation if it has changed
         return self._obs, self.reward(), self.done(), {}
 
     def obs(self): 
@@ -99,7 +104,7 @@ class AstroGymEnv(gym.Env):
     def render(self, mode="human", pause=1e-6):
         if mode == "human": 
             assert self.do_render, "Not set up for rendering; initialise with do_render=True"
-            # NOTE: Set up for five-channel images with BGR as the middle three channels.
+            # NOTE: This assumes a five-channel image with BGR as the middle three channels
             self._img_plt.set_data(cv2.cvtColor(self._obs[:,:,1:4], cv2.COLOR_BGR2RGB))
             if self._action is not None:
                 self._action_indicator[0].center = self._action[:2]
