@@ -6,7 +6,7 @@ from resnet import ResNet18
 
 env = AstroGymEnv( 
     img="images/mc_channelwise_clipping.npy",
-    do_render=False
+    do_render=True
     )
 
 net = ResNet18(in_channels=env.num_channels)

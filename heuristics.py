@@ -17,7 +17,7 @@ def hoyer_torch(obs):
     hoyer = (N - (sum_/root_sum))/(N - 1)
     return hoyer
 
-def hoyer_numpy(obs):
+def hoyer_numpy(_, obs, baseline):
     """
     Calculate the Hoyer sparsity of a NumPy array.
 
@@ -27,9 +27,9 @@ def hoyer_numpy(obs):
     sum_ = np.sum(obs)
     root_sum = np.sqrt(np.sum(obs**2))
     hoyer = (N - (sum_/root_sum))/(N - 1)
-    return hoyer
+    return hoyer - baseline
 
-def brightness_diff(obs, baseline):
+def brightness_diff(_, obs, baseline):
     """
     Calculate the change in mean pixel value vs a baseline value.
     """

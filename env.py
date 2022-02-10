@@ -14,11 +14,12 @@ class AstroGymEnv(gym.Env):
     OpenAI Gym-compatible environment for exploring astronomical images.
     """
 
-    render_size = 100        # In pixels
+    render_size = 200        # In pixels
     min_window_size = 100    # In pixels; CV2 will interpolate if this is < render_size
     plt_window_size = (6, 6) # In inches
     percentile_clip = 99     # Brightness percentile to clip each channel at
     random_init = True       # Whether to randomly initialise the window in each episode
+    _reward = hoyer_numpy    # Which heuristic reward function to use
 
     def __init__(self, img, do_render=False):
         self.observation_space = None
@@ -32,7 +33,7 @@ class AstroGymEnv(gym.Env):
         self.img = np.clip(self.img, a_min=None, a_max=np.percentile(self.img, self.percentile_clip))
         self.img /= self.img.max()
         self._state = (0, self.img_size, 0, self.img_size)
-        self.brightness_baseline = self.obs().mean() # Only needed for brightness_diff heuristic
+        self.reward_baseline = self._reward(self.obs(), 0.)
         self.do_render = do_render
         if self.do_render: 
             self.fig, self.ax = plt.subplots(figsize=self.plt_window_size)
@@ -95,8 +96,7 @@ class AstroGymEnv(gym.Env):
         return cv2.resize(self.img[yl:yu, xl:xu], (self.render_size, self.render_size))
 
     def reward(self):  
-        if False: return brightness_diff(self._obs, self.brightness_baseline)
-        elif True: return hoyer_numpy(self._obs)
+        return self._reward(self._obs, self.reward_baseline)
 
     def done(self):         
         return False
