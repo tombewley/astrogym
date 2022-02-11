@@ -12,85 +12,6 @@ import torch.optim as optim
 from gym.spaces.box import Box
 
 
-class SequentialNetwork(nn.Module):
-    def __init__(self, device, layers=None, code=None, preset=None, input_shape=None, output_size=None, normaliser=None,
-                 eval_only=False, optimiser=optim.Adam, lr=1e-3, clip_grads=False):
-        """
-        Net codes:
-        - "R"                 = ReLU
-        - "T"                 = Tanh
-        - "S"                 = Softmax
-        - ("D", p)            = Dropout
-        - ("B", num_features) = Batch norm
-        """
-        super(SequentialNetwork, self).__init__() 
-        if layers is None: 
-            assert input_shape is not None and output_size is not None, "Must specify input_shape and output_size."
-            if code is not None: layers = code_parser(code, input_shape, output_size)
-            else:
-                raise NotImplementedError("Not using presets here")
-                assert preset is not None, "Must specify layers, code or preset."
-                layers = sequential_presets(preset, input_shape, output_size)
-        if normaliser is not None: layers.insert(0, Normalise(normaliser=normaliser, device=device))
-        self.layers = nn.Sequential(*layers)
-        if eval_only: self.eval()
-        else: 
-            self.optimiser = optimiser(self.parameters(), lr=lr)
-            self.clip_grads = clip_grads
-        self.to(device)
-
-    def forward(self, x): return self.layers(x)
-
-    def optimise(self, loss, do_backward=True, retain_graph=True): 
-        assert self.training, "Network is in eval_only mode."
-        if do_backward: 
-            self.optimiser.zero_grad()
-            loss.backward(retain_graph=retain_graph) 
-        if self.clip_grads: # Optional gradient clipping.
-            for param in self.parameters(): param.grad.data.clamp_(-1, 1) 
-        self.optimiser.step()
-
-    def polyak(self, other, tau):
-        """
-        Use Polyak averaging to blend parameters with those of another network.
-        """
-        for self_param, other_param in zip(self.parameters(), other.parameters()):
-            self_param.data.copy_((other_param.data * tau) + (self_param.data * (1.0 - tau)))
-
-
-def code_parser(code, input_shape, output_size):
-    layers = []
-    for l in code:
-        if type(l) in {list, tuple}:   
-            i, o = l[0], l[1]
-            if i is None: i = input_shape # NOTE: Only works for vectors at the moment.
-            if o is None: o = output_size 
-            layers.append(nn.Linear(i, o))
-        elif l == "R":          layers.append(nn.ReLU())
-        elif l == "T":          layers.append(nn.Tanh())
-        elif l == "S":          layers.append(nn.Softmax(dim=1))
-        elif l[0] == "D":       layers.append(nn.Dropout(p=l[1]))
-        elif l[0] == "B":       layers.append(nn.BatchNorm2d(l[1]))
-    return layers
-
-
-class Normalise(nn.Module):
-    def __init__(self, normaliser, device):
-        super(Normalise, self).__init__()
-        # Normalise into [-1, 1] using limits of observation space.
-        assert type(normaliser) == tuple and all(type(n) == Box for n in normaliser)
-        rnge, shift = [], []
-        for space in normaliser: 
-            r = ((space.high - space.low) / 2.0)
-            rnge += list(r)
-            shift += list(r + space.low)
-        self.range, self.shift = torch.tensor(rnge, device=device), torch.tensor(shift, device=device)
-
-    def __repr__(self): return f"Normalise(range={self.range}, shift={self.shift})"
-
-    def forward(self, x): return (x - self.shift) / self.range
-
-
 # ===================================================================
 # RESNET (https://github.com/kuangliu/pytorch-cifar/blob/master/models/resnet.py))
 
@@ -203,16 +124,46 @@ def ResNet152(in_channels):
 # MULTI-HEADED NETWORK
 
 
-# class MultiHeadedNetwork(nn.Module):
-#     def __init__(self, common=None, heads=None, preset=None, input_shape=None, output_size=None):
-#         super(MultiHeadedNetwork, self).__init__() 
-#         if common is None: 
-#             assert preset is not None, "Must specify either layers or preset."
-#             assert input_shape is not None and output_size is not None, "Must specify input_shape and output_size."
-#             common, heads = multi_headed_presets(preset, input_shape, output_size)
-#         self.common = nn.Sequential(*common)
-#         self.heads = nn.ModuleList([nn.Sequential(*head) for head in heads])
+class MultiHeadedNetwork(nn.Module):
+    def __init__(self, device, common, head_codes, eval_only=False, optimiser=optim.Adam, lr=1e-3, clip_grads=False):
+        super(MultiHeadedNetwork, self).__init__() 
+        self.common = common
+        
+        # self.heads = nn.ModuleList(heads)
+        self.heads = nn.ModuleList(nn.Sequential(*code_parser(code)) for code in head_codes)
 
-#     def forward(self, x): 
-#         x = self.common(x)
-#         return tuple(head(x) for head in self.heads)
+        if eval_only: self.eval()
+        elif optimiser is not None: 
+            self.optimiser = optimiser(self.parameters(), lr=lr)
+            self.clip_grads = clip_grads
+        self.to(device)
+
+    def optimise(self, loss, do_backward=True, retain_graph=True): 
+        assert self.training, "Network is in eval_only mode."
+        if do_backward: 
+            self.optimiser.zero_grad()
+            loss.backward()#retain_graph=retain_graph) 
+        if self.clip_grads: # Optional gradient clipping.
+            for param in self.parameters(): param.grad.data.clamp_(-1, 1) 
+        self.optimiser.step()
+
+    def forward(self, x, x_heads): 
+        x = self.common(x)
+        print(x)
+        return tuple(head(torch.cat((x, x_head), axis=1)) for head, x_head in zip(self.heads, x_heads))
+
+    
+def code_parser(code, input_shape=None, output_size=None):
+    layers = []
+    for l in code:
+        if type(l) in {list, tuple}:   
+            i, o = l[0], l[1]
+            if i is None: i = input_shape # NOTE: Only works for vectors at the moment.
+            if o is None: o = output_size 
+            layers.append(nn.Linear(i, o))
+        elif l == "R":          layers.append(nn.ReLU())
+        elif l == "T":          layers.append(nn.Tanh())
+        elif l == "S":          layers.append(nn.Softmax(dim=1))
+        elif l[0] == "D":       layers.append(nn.Dropout(p=l[1]))
+        elif l[0] == "B":       layers.append(nn.BatchNorm2d(l[1]))
+    return layers
