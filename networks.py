@@ -128,10 +128,7 @@ class MultiHeadedNetwork(nn.Module):
     def __init__(self, device, common, head_codes, eval_only=False, optimiser=optim.Adam, lr=1e-3, clip_grads=False):
         super(MultiHeadedNetwork, self).__init__() 
         self.common = common
-        
-        # self.heads = nn.ModuleList(heads)
         self.heads = nn.ModuleList(nn.Sequential(*code_parser(code)) for code in head_codes)
-
         if eval_only: self.eval()
         elif optimiser is not None: 
             self.optimiser = optimiser(self.parameters(), lr=lr)
@@ -149,7 +146,6 @@ class MultiHeadedNetwork(nn.Module):
 
     def forward(self, x, x_heads): 
         x = self.common(x)
-        print(x)
         return tuple(head(torch.cat((x, x_head), axis=1)) for head, x_head in zip(self.heads, x_heads))
 
     
