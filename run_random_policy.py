@@ -1,7 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 from env import AstroGymEnv
-from resnet import ResNet18
+from networks import ResNet18
 
 
 env = AstroGymEnv( 
