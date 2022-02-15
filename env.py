@@ -105,6 +105,7 @@ class AstroGymEnv(gym.Env):
         if mode == "human": 
             assert self.do_render, "Not set up for rendering; initialise with do_render=True"
             # NOTE: This assumes a five-channel image with BGR as the middle three channels
+            assert self.num_channels == 5
             self._img_plt.set_data(cv2.cvtColor(self._obs[:,:,1:4], cv2.COLOR_BGR2RGB))
             if self._action is not None:
                 self._action_indicator[0].center = self._action[:2]
