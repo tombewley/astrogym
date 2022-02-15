@@ -36,7 +36,7 @@ for ep in range(1000):
         
         # Random walking action
         action = 0.9 * action + 0.1 * env.action_space.sample()
-        # action[2] = (action[2] - 1) / 2 # Always zoom in (a bit less boring!)
+        action[2] = (action[2] - 1) / 2 # Always zoom in (a bit less boring!)
         
         
         obs_batch.append(obs)

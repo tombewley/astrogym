@@ -14,7 +14,7 @@ class AstroGymEnv(gym.Env):
     OpenAI Gym-compatible environment for exploring astronomical images.
     """
 
-    render_size = 200        # In pixels
+    render_size = 50         # In pixels
     min_window_size = 100    # In pixels; CV2 will interpolate if this is < render_size
     plt_window_size = (6, 6) # In inches
     percentile_clip = 99     # Brightness percentile to clip each channel at
@@ -41,7 +41,7 @@ class AstroGymEnv(gym.Env):
             self.ax.set_xticks([]); self.ax.set_yticks([]); plt.ion(); self.ax.set_aspect("equal", "box")
             self.ax.margins(x=0, y=0)
             plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)            
-            self._img_plt = self.ax.imshow([[0]], extent=(-1,1,1,-1))
+            self._img_plt = self.ax.imshow([[0]], extent=(-1,1,1,-1), interpolation="none")
             self._action_indicator = (
                 Circle(xy=(0, 0), radius=0.05, facecolor="w", alpha=0.5),
                 Rectangle(xy=(-1, -1), width=2, height=2, edgecolor="w", fill=False)
