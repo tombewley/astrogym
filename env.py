@@ -14,12 +14,12 @@ class AstroGymEnv(gym.Env):
     OpenAI Gym-compatible environment for exploring astronomical images.
     """
 
-    render_size = 50         # In pixels
-    min_window_size = 100    # In pixels; CV2 will interpolate if this is < render_size
-    plt_window_size = (6, 6) # In inches
-    percentile_clip = 99     # Brightness percentile to clip each channel at
-    random_init = True       # Whether to randomly initialise the window in each episode
-    _reward = hoyer_numpy    # Which heuristic reward function to use
+    render_size = 50          # In pixels
+    min_window_size = 100     # In pixels; CV2 will interpolate if this is < render_size
+    plt_window_size = (6, 6)  # In inches
+    percentile_clip = 99      # Brightness percentile to clip each channel at
+    random_init = True        # Whether to randomly initialise the window in each episode
+    _reward = brightness_diff # Which heuristic reward function to use
 
     def __init__(self, img, do_render=False):
         self.observation_space = None
