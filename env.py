@@ -31,8 +31,8 @@ class AstroGymEnv(gym.Env):
         assert self.img_size >= 4 * self.render_size, "Insufficient image size" # NOTE: This is completely arbitrary
         self.img = np.clip(self.img, a_min=None, a_max=np.percentile(self.img, self.percentile_clip))
         self.img /= self.img.max()
-        self._state = (0, self.img_size, 0, self.img_size)
         self._reward = reward
+        self._state = (0, self.img_size, 0, self.img_size)
         self.reward_baseline = self._reward(self.obs(), 0.)
         self.do_render = do_render
         if self.do_render: 

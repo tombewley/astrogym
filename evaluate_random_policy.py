@@ -16,7 +16,9 @@ DP = {
 }
 AP = {
     "lr": 1e-4,
-    "batch_size": 10
+    "replay_capacity": 10000,
+    "batch_size": 32,
+    "update_freq": 1,
 }
 
 env = AstroGymEnv( 

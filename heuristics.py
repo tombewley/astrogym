@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 
-def hoyer_torch(obs):
+def hoyer_torch(obs, baseline):
     """
     Calculate the Hoyer sparsity of a PyTorch tensor.
 
@@ -15,7 +15,7 @@ def hoyer_torch(obs):
     sum_ = torch.sum(obs)
     root_sum = torch.sqrt(torch.sum(obs**2))
     hoyer = (N - (sum_/root_sum))/(N - 1)
-    return hoyer
+    return hoyer - baseline
 
 def hoyer_numpy(obs, baseline):
     """
