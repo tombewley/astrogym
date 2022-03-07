@@ -1,3 +1,4 @@
 images/
-*.model
+agents/
+wandb/
 __pycache__/**

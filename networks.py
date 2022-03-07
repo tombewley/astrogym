@@ -146,7 +146,8 @@ class MultiHeadedNetwork(nn.Module):
 
     def forward(self, x, x_heads): 
         x = self.common(x)
-        return tuple(head(torch.cat((x, x_head), axis=1)) for head, x_head in zip(self.heads, x_heads))
+        return tuple(head(torch.cat((x, x_head), axis=1) if x_head is not None else x) 
+                     for head, x_head in zip(self.heads, x_heads))
 
     
 def code_parser(code, input_shape=None, output_size=None):

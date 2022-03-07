@@ -19,9 +19,8 @@ class AstroGymEnv(gym.Env):
     plt_window_size = (6, 6)  # In inches
     percentile_clip = 99      # Brightness percentile to clip each channel at
     random_init = True        # Whether to randomly initialise the window in each episode
-    _reward = brightness_diff # Which heuristic reward function to use
 
-    def __init__(self, img, do_render=False):
+    def __init__(self, img, reward=brightness_diff, do_render=False):
         self.observation_space = None
         self.action_space = gym.spaces.Box(np.float32(-1), np.float32(1), shape=(3,)) 
         ext = img.split(".")[-1]
@@ -33,6 +32,7 @@ class AstroGymEnv(gym.Env):
         self.img = np.clip(self.img, a_min=None, a_max=np.percentile(self.img, self.percentile_clip))
         self.img /= self.img.max()
         self._state = (0, self.img_size, 0, self.img_size)
+        self._reward = reward
         self.reward_baseline = self._reward(self.obs(), 0.)
         self.do_render = do_render
         if self.do_render: 
